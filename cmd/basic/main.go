@@ -12,8 +12,6 @@ func main() {
 
 // PrintOldStyleMetrics... Printing the metrics based on runtime package. Each of the metric is retrieved in a different method.
 // Each metric will have a different function
-// GOMAXPROCS is retrieved if value is < 1 and set if value is >=1
-// NumCPU is retrieved without arguments
 func PrintOldStyleMetrics() {
 	fmt.Printf("Operating system is: %s\n", runtime.GOOS)
 	// Get number of go routines, max os threads allocated to process and host number of cpus
