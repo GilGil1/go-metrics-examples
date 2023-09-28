@@ -3,17 +3,15 @@ package metadata
 import (
 	"fmt"
 	metrics "runtime/metrics"
+	"strings"
 )
 
 const (
-	errorValue = -1.0
+	errorValue          = -1.0
+	OtelScope           = "https://github.com/GilGil1/go-metrics-examples"
+	MetricsPath         = "/metrics"
+	MetricsEndpointPort = ":2223"
 )
-
-// PrintRuntimeMetricsMetadata... This function demonstrates the usage of runtime/metrics package.
-// It demonstrates how to get all metrics parameters in few calls, no need to adjust if a new metric is added
-func PrintRuntimeMetricsMetadata() {
-
-}
 
 // Function to get metrics values from runtime/metrics package
 func GetAllMetrics() []metrics.Sample {
@@ -27,17 +25,7 @@ func GetAllMetrics() []metrics.Sample {
 	return samples
 }
 
-func GetSingleMetricSample(metricName string) metrics.Sample {
-
-	// Create a sample for the metric.
-	sample := make([]metrics.Sample, 1)
-	sample[0].Name = metricName
-
-	// Sample the metric.
-	metrics.Read(sample)
-	return sample[0]
-}
-
+// Function to get metrics values from runtime/metrics package as float64
 func GetSingleMetricFloat(metricName string) float64 {
 
 	// Create a sample for the metric.
@@ -69,4 +57,19 @@ func getFloat64(sample metrics.Sample) float64 {
 		panic(fmt.Sprintf("%s: unexpected metric Kind: %v\n", sample.Name, sample.Value.Kind()))
 	}
 	return floatVal
+}
+
+// Function to get metrics subsysyetm from a mteric metadata
+func GetMetricSubsystemName(metric metrics.Description) string {
+	tokens := strings.Split(metric.Name, "/")
+	if len(tokens) < 2 {
+		return ""
+	}
+	if len(tokens) > 3 {
+		subsystemTokens := tokens[2 : len(tokens)-1]
+		subsystem := strings.Join(subsystemTokens, "_")
+		subsystem = strings.ReplaceAll(subsystem, "-", "_")
+		return subsystem
+	}
+	return ""
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"go-metrics-examples/internal/metadata"
+	"log"
 	"net/http"
 	"runtime/metrics"
 	"strings"
@@ -14,20 +15,20 @@ import (
 // main function to register metrics and start prometheus server
 func main() {
 
-	// Get descriptions for all supported metrics.
-	metricsMeta := metrics.All()
+	// Register metrics and retrieve the values in prometheus client
+	addMetricsToPrometheusRegistry()
 
-	// Register metrics and retreivinbg the values in prometgheus client
-	addMetricsToPrometheusRegistry(metricsMeta)
-
-	// Setup the prometheus metrics endpoint on port 2112,
-	// to use it run http://ipadress:2112/metrics or set prometheus to that address
-	http.Handle("/metrics", promhttp.Handler())
-	http.ListenAndServe(":2112", nil)
+	// Setup the prometheus handler
+	log.Printf("serving metrics at localhost%s%s", metadata.MetricsEndpointPort, metadata.MetricsPath)
+	http.Handle(metadata.MetricsPath, promhttp.Handler())
+	http.ListenAndServe(metadata.MetricsEndpointPort, nil)
 }
 
 // addMetricsToPrometheusRegistry function to add metrics to prometheus registry
-func addMetricsToPrometheusRegistry(metricsMeta []metrics.Description) {
+func addMetricsToPrometheusRegistry() {
+	// Get descriptions for all supported metrics.
+	metricsMeta := metrics.All()
+	// Register metrics and retrieve the values in prometheus client
 	for i := range metricsMeta {
 		meta := metricsMeta[i]
 		opts := getMetricsOptions(metricsMeta[i])
@@ -57,7 +58,7 @@ func getMetricsOptions(metric metrics.Description) prometheus.Opts {
 	nameTokens := strings.Split(tokens[len(tokens)-1], ":")
 	// create a unique name for metric, that will be its primary key on the registry
 	validName := normalizePrometheusName(strings.Join(nameTokens[:2], "_"))
-	subsystem := getSubsystemName(metric)
+	subsystem := metadata.GetMetricSubsystemName(metric)
 
 	units := nameTokens[1]
 	help := fmt.Sprintf("Units:%s, %s", units, metric.Description)
@@ -68,21 +69,6 @@ func getMetricsOptions(metric metrics.Description) prometheus.Opts {
 		Help:      help,
 	}
 	return opts
-}
-
-// getSubsystemName function to get subsystem name from metric name
-func getSubsystemName(metric metrics.Description) string {
-	tokens := strings.Split(metric.Name, "/")
-	if len(tokens) < 2 {
-		return ""
-	}
-	if len(tokens) > 3 {
-		subsystemTokens := tokens[2 : len(tokens)-1]
-		subsystem := strings.Join(subsystemTokens, "_")
-		subsystem = normalizePrometheusName(subsystem)
-		return subsystem
-	}
-	return ""
 }
 
 // normalizePrometheusName function to normalize prometheus name
